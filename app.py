@@ -3,7 +3,8 @@ import pandas as pd
 import numpy as np
 import hashlib
 import time
-import matplotlib.pyplot as plt
+import plotly.express as px
+import plotly.graph_objects as go
 from sklearn.metrics import confusion_matrix
 
 st.set_page_config(page_title="AI IDS Dashboard", layout="wide")
@@ -105,15 +106,17 @@ if uploaded_file:
 
     st.subheader("Traffic Distribution")
 
-    fig1, ax1 = plt.subplots()
+    fig1 = px.pie(
+        values=[normal_count, attack_count], 
+        names=['Normal', 'Attack'], 
+        title='Traffic Distribution',
+        hole=0.3,
+        color_discrete_sequence=px.colors.sequential.Agsunset
+    )
+    fig1.update_layout(showlegend=False)
+    fig1.update_traces(textinfo='percent+label', textfont_size=14)
 
-    labels = ["Normal","Attack"]
-
-    sizes = [normal_count,attack_count]
-
-    ax1.pie(sizes, labels=labels, autopct='%1.1f%%')
-
-    st.pyplot(fig1)
+    st.plotly_chart(fig1, use_container_width=True)
 
     # -----------------------------
     # Confusion Matrix
@@ -121,28 +124,22 @@ if uploaded_file:
 
     st.subheader("Confusion Matrix")
 
-    y_true = np.array([0]*normal_count + [1]*attack_count)
+    cm_labels = ['Normal', 'Attack']
+    
+    fig2 = go.Figure(data=go.Heatmap(
+        z=cm,
+        x=cm_labels,
+        y=cm_labels,
+        colorscale='Viridis'
+    ))
 
-    error_rate = 1-accuracy
+    fig2.update_layout(
+        title='Confusion Matrix',
+        xaxis_title="Predicted",
+        yaxis_title="Actual",
+    )
 
-    flip_count = int(total_rows*error_rate)
-
-    y_pred = y_true.copy()
-
-    flip_index = np.random.choice(total_rows, flip_count, replace=False)
-
-    y_pred[flip_index] = 1 - y_pred[flip_index]
-
-    cm = confusion_matrix(y_true,y_pred)
-
-    fig2, ax2 = plt.subplots()
-
-    ax2.imshow(cm)
-
-    ax2.set_xlabel("Predicted")
-    ax2.set_ylabel("Actual")
-
-    st.pyplot(fig2)
+    st.plotly_chart(fig2, use_container_width=True)
 
     # -----------------------------
     # Metrics Graph
@@ -150,14 +147,17 @@ if uploaded_file:
 
     st.subheader("Metrics Graph")
 
-    metrics = ["Accuracy","Precision","Recall","F1"]
+    metrics = ["Accuracy", "Precision", "Recall", "F1"]
+    values = [accuracy, precision, recall, f1]
 
-    values = [accuracy,precision,recall,f1]
+    fig3 = px.bar(
+        x=metrics, 
+        y=values,
+        title="Model Metrics",
+        labels={'x': 'Metric', 'y': 'Score'},
+        color=metrics,
+        color_discrete_sequence=px.colors.qualitative.Pastel
+    )
+    fig3.update_layout(yaxis_range=[0,1])
 
-    fig3, ax3 = plt.subplots()
-
-    ax3.bar(metrics, values)
-
-    ax3.set_ylim(0,1)
-
-    st.pyplot(fig3)
+    st.plotly_chart(fig3, use_container_width=True)
